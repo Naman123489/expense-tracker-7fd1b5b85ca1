@@ -1,0 +1,80 @@
+[
+  {
+    "stage_id": "T1",
+    "agent": "backend",
+    "instructions": "Create SQLite tables: expenses(id, amount, category, description, date) and budget(id, daily_limit). Implement DAO functions for creating, listing (with optional start_date/end_date filters), deleting expenses, and getting/setting budget.",
+    "contract_ref": "contract/openapi.yaml",
+    "files_allowed": [
+      "backend/app/models.py",
+      "backend/app/database.py",
+      "backend/app/crud.py",
+      "backend/app/main.py"
+    ],
+    "failed_attempts": 0,
+    "reviewer_failures": [],
+    "budget_context": {}
+  },
+  {
+    "stage_id": "T2",
+    "agent": "backend",
+    "instructions": "Add route GET /api/stats that computes total spent today, remaining budget today (daily_limit - total_today), total spent this month, and sum of amounts grouped by category. Returns JSON with those fields.",
+    "contract_ref": "contract/openapi.yaml",
+    "files_allowed": [
+      "backend/app/main.py",
+      "backend/app/crud.py"
+    ],
+    "failed_attempts": 0,
+    "reviewer_failures": [],
+    "budget_context": {}
+  },
+  {
+    "stage_id": "F1",
+    "agent": "frontend",
+    "instructions": "Initialize Vite + React + TypeScript project. Create a singleton service (expenseApi.ts) wrapping fetch calls to the backend endpoints (list, create, delete, get/set budget, stats). Include basic error handling and TypeScript types matching API schemas.",
+    "contract_ref": "contract/openapi.yaml",
+    "files_allowed": [
+      "frontend/src/services/expenseApi.ts",
+      "frontend/src/types/api.ts"
+    ],
+    "failed_attempts": 0,
+    "reviewer_failures": [],
+    "budget_context": {}
+  },
+  {
+    "stage_id": "F2",
+    "agent": "frontend",
+    "instructions": "Component shows a table/list of expenses fetched on mount via listExpenses (optionally filtered by date). Includes a form to submit new expense (amount, category, date, description). On submit calls createExpense and refreshes list. Each row displays a delete button calling deleteExpense. Shows loading/error states.",
+    "contract_ref": "contract/openapi.yaml",
+    "files_allowed": [
+      "frontend/src/components/ExpenseList.tsx",
+      "frontend/src/components/ExpenseForm.tsx"
+    ],
+    "failed_attempts": 0,
+    "reviewer_failures": [],
+    "budget_context": {}
+  },
+  {
+    "stage_id": "F3",
+    "agent": "frontend",
+    "instructions": "Component fetches current budget via getBudget on mount. Shows input field to set new budget; on submit calls setBudget and updates displayed limit. Includes validation (positive number).",
+    "contract_ref": "contract/openapi.yaml",
+    "files_allowed": [
+      "frontend/src/components/Budget.tsx"
+    ],
+    "failed_attempts": 0,
+    "reviewer_failures": [],
+    "budget_context": {}
+  },
+  {
+    "stage_id": "F4",
+    "agent": "frontend",
+    "instructions": "Component calls getStats on mount and displays: total spent today, remaining budget today, total spent this month, and a bar chart (or list) of spending by category. Handles loading and error states.",
+    "contract_ref": "contract/openapi.yaml",
+    "files_allowed": [
+      "frontend/src/components/Stats.tsx"
+    ],
+    "failed_attempts": 0,
+    "reviewer_failures": [],
+    "budget_context": {}
+  }
+]

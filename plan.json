@@ -1,0 +1,189 @@
+{
+  "project_name": "expense-tracker",
+  "summary": "A simple expense tracker that records daily expenses, sets a daily budget, and provides statistical summaries.",
+  "requirements": [
+    "Record an expense with amount, category, optional description, and date.",
+    "List expenses with optional date-range filtering.",
+    "Delete an expense by ID.",
+    "Get and set the daily budget limit.",
+    "Retrieve statistical data: total spent today, remaining budget today, total spent this month, and breakdown by category."
+  ],
+  "assumptions": [
+    "Single-user app; no authentication required.",
+    "Dates are stored as ISO 8601 dates (YYYY-MM-DD) without time.",
+    "Amounts are positive numbers with up to two decimal places.",
+    "SQLite is sufficient for the expected data volume."
+  ],
+  "open_questions": [
+    "Should the app support multiple users or authentication in the future?",
+    "Should expense deletion be soft-delete or hard-delete?"
+  ],
+  "technology_stack": [
+    "FastAPI",
+    "SQLite",
+    "React",
+    "TypeScript",
+    "Vite"
+  ],
+  "tasks": [
+    {
+      "task_id": "T1",
+      "title": "Design database schema and implement expense CRUD operations",
+      "description": "Create SQLite tables: expenses(id, amount, category, description, date) and budget(id, daily_limit). Implement DAO functions for creating, listing (with optional start_date/end_date filters), deleting expenses, and getting/setting budget.",
+      "owner": "backend",
+      "endpoints": [
+        "POST /api/expenses",
+        "GET /api/expenses",
+        "DELETE /api/expenses/{id}",
+        "GET /api/budget",
+        "POST /api/budget"
+      ],
+      "dependencies": [],
+      "acceptance_checks": [
+        "HTTP POST /api/expenses with valid payload returns 201 and created expense.",
+        "HTTP GET /api/expenses returns 200 with array of expense objects.",
+        "HTTP DELETE /api/expenses/{id} returns 204 when exists, 404 when not found.",
+        "HTTP GET /api/budget returns 200 with {daily_limit}.",
+        "HTTP POST /api/budget with valid daily_limit returns 200 updated budget."
+      ],
+      "files_allowed": [
+        "backend/app/models.py",
+        "backend/app/database.py",
+        "backend/app/crud.py",
+        "backend/app/main.py"
+      ]
+    },
+    {
+      "task_id": "T2",
+      "title": "Implement statistics endpoint",
+      "description": "Add route GET /api/stats that computes total spent today, remaining budget today (daily_limit - total_today), total spent this month, and sum of amounts grouped by category. Returns JSON with those fields.",
+      "owner": "backend",
+      "endpoints": [
+        "GET /api/stats"
+      ],
+      "dependencies": [
+        "T1"
+      ],
+      "acceptance_checks": [
+        "With no expenses, GET /api/stats returns 200 with totals zero and empty by_category array.",
+        "After inserting known expenses, returned totals match manual calculation.",
+        "Response includes daily_budget_limit from budget table."
+      ],
+      "files_allowed": [
+        "backend/app/main.py",
+        "backend/app/crud.py"
+      ]
+    },
+    {
+      "task_id": "F1",
+      "title": "Set up React project with API service layer",
+      "description": "Initialize Vite + React + TypeScript project. Create a singleton service (expenseApi.ts) wrapping fetch calls to the backend endpoints (list, create, delete, get/set budget, stats). Include basic error handling and TypeScript types matching API schemas.",
+      "owner": "frontend",
+      "endpoints": [
+        "GET /api/expenses",
+        "POST /api/expenses",
+        "DELETE /api/expenses/{id}",
+        "GET /api/budget",
+        "POST /api/budget",
+        "GET /api/stats"
+      ],
+      "dependencies": [],
+      "acceptance_checks": [
+        "Service file compiles without errors.",
+        "Each exported function returns a Promise that resolves to the expected TypeScript type.",
+        "Mock server responses show correct URL and method calls."
+      ],
+      "files_allowed": [
+        "frontend/src/services/expenseApi.ts",
+        "frontend/src/types/api.ts"
+      ]
+    },
+    {
+      "task_id": "F2",
+      "title": "Build ExpenseList component with form and delete button",
+      "description": "Component shows a table/list of expenses fetched on mount via listExpenses (optionally filtered by date). Includes a form to submit new expense (amount, category, date, description). On submit calls createExpense and refreshes list. Each row displays a delete button calling deleteExpense. Shows loading/error states.",
+      "owner": "frontend",
+      "endpoints": [
+        "GET /api/expenses",
+        "POST /api/expenses",
+        "DELETE /api/expenses/{id}"
+      ],
+      "dependencies": [
+        "F1"
+      ],
+      "acceptance_checks": [
+        "Rendering component displays empty list initially.",
+        "Submitting valid form adds a new row without page reload.",
+        "Delete button removes the row and updates list.",
+        "Form validation prevents submission of non-positive amount or empty category.",
+        "Error states shown when API returns non-2xx."
+      ],
+      "files_allowed": [
+        "frontend/src/components/ExpenseList.tsx",
+        "frontend/src/components/ExpenseForm.tsx"
+      ]
+    },
+    {
+      "task_id": "F3",
+      "title": "Build Budget component to set and display daily budget",
+      "description": "Component fetches current budget via getBudget on mount. Shows input field to set new budget; on submit calls setBudget and updates displayed limit. Includes validation (positive number).",
+      "owner": "frontend",
+      "endpoints": [
+        "GET /api/budget",
+        "POST /api/budget"
+      ],
+      "dependencies": [
+        "F1"
+      ],
+      "acceptance_checks": [
+        "Component loads and displays current budget (default 0).",
+        "Entering a valid number and clicking Save updates the displayed value without reload.",
+        "Submitting invalid or non-positive number shows error and does not call API.",
+        "API error responses are shown to user."
+      ],
+      "files_allowed": [
+        "frontend/src/components/Budget.tsx"
+      ]
+    },
+    {
+      "task_id": "F4",
+      "title": "Build Stats component to display statistical data",
+      "description": "Component calls getStats on mount and displays: total spent today, remaining budget today, total spent this month, and a bar chart (or list) of spending by category. Handles loading and error states.",
+      "owner": "frontend",
+      "endpoints": [
+        "GET /api/stats"
+      ],
+      "dependencies": [
+        "F1"
+      ],
+      "acceptance_checks": [
+        "On mount with no data shows zeros and empty category list.",
+        "After adding expenses via ExpenseList, stats update accordingly (can trigger via refetch or prop).",
+        "Values match calculations from backend (verified by manual test).",
+        "Error states shown on non-2xx responses."
+      ],
+      "files_allowed": [
+        "frontend/src/components/Stats.tsx"
+      ]
+    }
+  ],
+  "risks": [
+    "Backend uses SQLite which may have concurrency limits if multiple users later added – plan to migrate to PostgreSQL if scaling needed.",
+    "Frontend state management relies on prop drilling or useContext; as app grows, consider adopting Redux or Zustand for scalability.",
+    "No authentication means data is exposed to anyone who can reach the API; if multi-user support is required, add JWT-based auth.",
+    "Date handling assumes client and server share same timezone; storing ISO date strings without time may cause off‑by‑one errors across zones – consider storing UTC timestamps.",
+    "Statistics endpoint performs aggregates on every request; with large datasets this could become slow – consider adding indexes on expense.date and caching."
+  ],
+  "parallel_groups": [
+    [
+      "T1",
+      "F1"
+    ],
+    [
+      "T2",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  ]
+}

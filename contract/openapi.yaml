@@ -1,0 +1,254 @@
+openapi: 3.1.0
+info:
+  title: Expense Tracker API
+  version: 1.0.0
+paths:
+  /api/expenses:
+    get:
+      summary: Retrieve a list of expenses, optionally filtered by date range
+      operationId: listExpenses
+      parameters:
+      - name: start_date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+          example: '2025-08-01'
+        description: Inclusive start date (YYYY-MM-DD)
+      - name: end_date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+          example: '2025-08-31'
+        description: Inclusive end date (YYYY-MM-DD)
+      responses:
+        '200':
+          description: Array of expense objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new expense
+      operationId: createExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreate'
+      responses:
+        '201':
+          description: Created expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/expenses/{id}:
+    delete:
+      summary: Delete an expense by ID
+      operationId: deleteExpense
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '204':
+          description: Expense deleted
+        '404':
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/budget:
+    get:
+      summary: Get the current daily budget limit
+      operationId: getBudget
+      responses:
+        '200':
+          description: Budget object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+    post:
+      summary: Set the daily budget limit
+      operationId: setBudget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetUpdate'
+      responses:
+        '200':
+          description: Updated budget
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          description: Invalid budget value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/stats:
+    get:
+      summary: Get statistical summary of expenses
+      operationId: getStats
+      responses:
+        '200':
+          description: Statistical data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Expense:
+      type: object
+      required:
+      - id
+      - amount
+      - category
+      - date
+      properties:
+        id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          format: float
+          exclusiveMinimum: 0
+          example: 12.5
+        category:
+          type: string
+          minLength: 1
+          example: Food
+        description:
+          type: string
+          nullable: true
+          example: Lunch at cafe
+        date:
+          type: string
+          format: date
+          example: '2025-08-15'
+    ExpenseCreate:
+      type: object
+      required:
+      - amount
+      - category
+      - date
+      properties:
+        amount:
+          type: number
+          format: float
+          exclusiveMinimum: 0
+        category:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date
+    Budget:
+      type: object
+      required:
+      - daily_limit
+      properties:
+        daily_limit:
+          type: number
+          format: float
+          minimum: 0
+          example: 50
+    BudgetUpdate:
+      type: object
+      required:
+      - daily_limit
+      properties:
+        daily_limit:
+          type: number
+          format: float
+          minimum: 0
+    CategoryStat:
+      type: object
+      required:
+      - category
+      - total
+      properties:
+        category:
+          type: string
+        total:
+          type: number
+          format: float
+    StatsResponse:
+      type: object
+      required:
+      - total_today
+      - remaining_today
+      - total_this_month
+      - by_category
+      - daily_budget_limit
+      properties:
+        total_today:
+          type: number
+          format: float
+          example: 23.4
+        remaining_today:
+          type: number
+          format: float
+          example: 26.6
+        total_this_month:
+          type: number
+          format: float
+          example: 150.0
+        by_category:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryStat'
+          example:
+          - category: Food
+            total: 45.2
+          - category: Transport
+            total: 12.0
+        daily_budget_limit:
+          type: number
+          format: float
+          example: 50
+    ErrorResponse:
+      type: object
+      required:
+      - detail
+      properties:
+        detail:
+          type: string
+          example: Validation failed
